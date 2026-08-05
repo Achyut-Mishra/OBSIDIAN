@@ -46,14 +46,8 @@ conn = sqlite3.connect(
 )
 
 cursor = conn.cursor()
-try:
-    cursor.execute("""
-        ALTER TABLE users
-        ADD COLUMN joined_date TEXT
-    """)
-    conn.commit()
-except:
-    pass
+
+
 # ---------------- USERS TABLE ----------------
 
 cursor.execute("""
@@ -63,6 +57,7 @@ CREATE TABLE IF NOT EXISTS users (
     telegram_id INTEGER UNIQUE NOT NULL,
     username TEXT,
     leetcode TEXT,
+    joined_date TEXT,
 
     -- streak system
     streak INTEGER DEFAULT 1,
@@ -93,6 +88,23 @@ CREATE TABLE IF NOT EXISTS users (
 
 conn.commit()
 
+
+# ---------------- DATABASE MIGRATION ----------------
+# Adds new columns to existing databases if they are missing
+
+try:
+    cursor.execute("""
+        ALTER TABLE users
+        ADD COLUMN joined_date TEXT
+    """)
+    conn.commit()
+
+except sqlite3.OperationalError:
+    pass
+
+
+# ---------------- ANALYTICS TABLE ----------------
+
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS analytics(
     feature TEXT PRIMARY KEY,
@@ -101,6 +113,8 @@ CREATE TABLE IF NOT EXISTS analytics(
 """)
 
 conn.commit()
+
+
 # ---------------- INDEXES ----------------
 
 cursor.execute("""
