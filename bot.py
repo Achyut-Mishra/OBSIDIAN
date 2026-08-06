@@ -9,6 +9,9 @@ import random
 import requests
 import json
 
+from zoneinfo import ZoneInfo
+IST = ZoneInfo("Asia/Kolkata")
+
 ADMIN_ID = 7445334536
 with open("merged_problems.json", "r", encoding="utf-8") as f:
     data = json.load(f)
@@ -1097,13 +1100,15 @@ from datetime import datetime
 import random
 
 
-# ---------------- REMINDER JOB 
+# ---------------- REMINDER JOB ----------------
+
 async def reminder_job(context: ContextTypes.DEFAULT_TYPE):
     application = context.application
-    current_time = datetime.now().strftime("%H:%M")
+
+    current_time = datetime.now(IST).strftime("%H:%M")
 
     try:
-        print("🔁 Scheduler running:", datetime.now().strftime("%H:%M:%S"))
+        print("🔁 Scheduler running:", datetime.now(IST).strftime("%H:%M:%S"))
 
         users = cursor.execute("""
             SELECT telegram_id, reminder_time
@@ -1144,16 +1149,14 @@ async def reminder_job(context: ContextTypes.DEFAULT_TYPE):
                     )
                 )
             else:
-                # optional fallback message (no unsolved problems)
                 await application.bot.send_message(
                     chat_id=user_id,
-                    text="🎉 Great job! You’ve solved all available problems!"
+                    text="🎉 Great job! You've solved all available problems!"
                 )
 
     except Exception as e:
         print("Scheduler error:", e)
-
-
+        
 # ---------------- ADMIN ----------------
 async def admin(update: Update,
                 context: ContextTypes.DEFAULT_TYPE):
