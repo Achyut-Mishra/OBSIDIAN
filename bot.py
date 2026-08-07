@@ -1212,8 +1212,49 @@ async def admin(update: Update,
         leaderboard += (
             f"{prefix} {username} — 🔥 {streak}\n"
         )
-    
-    # ---------------- FEATURE ANALYTICS ----------------
+
+# ---------------- GET LEETCODE USERS ----------------
+
+async def get_leetcode(update: Update,
+                       context: ContextTypes.DEFAULT_TYPE):
+
+    if update.effective_user.id != ADMIN_ID:
+        await update.message.reply_text("❌ Unauthorized.")
+        return
+
+    users = cursor.execute("""
+        SELECT username, leetcode
+        FROM users
+        WHERE leetcode IS NOT NULL
+        AND leetcode != ''
+        ORDER BY username
+    """).fetchall()
+
+    if not users:
+        await update.message.reply_text(
+            "No users have registered their LeetCode username yet."
+        )
+        return
+
+    message = "📋 Registered LeetCode Users\n\n"
+
+    for i, (telegram_username, leetcode_username) in enumerate(users, start=1):
+
+        telegram_username = telegram_username or "Unknown"
+
+        leetcode_url = (
+            f"https://leetcode.com/u/{leetcode_username}/"
+        )
+
+        message += (
+            f"{i}. @{telegram_username}\n"
+            f"   LeetCode: {leetcode_username}\n"
+            f"   {leetcode_url}\n\n"
+        )
+
+    await update.message.reply_text(message)
+
+# ---------------- FEATURE ANALYTICS ----------------
 
     profile_count = get_feature_count("profile")
     leetcode_count = get_feature_count("leetcode")
@@ -1350,6 +1391,7 @@ app.add_handler(CommandHandler("help", help_command))
 app.add_handler(CommandHandler("about", about))
 app.add_handler(CommandHandler("setreminder", set_reminder))
 app.add_handler(CommandHandler("admin", admin))
+app.add_handler(CommandHandler("getleetcode", get_leetcode))
 # ---------------- CONVERSATION HANDLER ----------------
 
 conv_handler = ConversationHandler(
