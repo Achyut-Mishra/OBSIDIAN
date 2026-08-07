@@ -1158,6 +1158,7 @@ async def reminder_job(context: ContextTypes.DEFAULT_TYPE):
         print("Scheduler error:", e)
         
 # ---------------- ADMIN ----------------
+
 async def admin(update: Update,
                 context: ContextTypes.DEFAULT_TYPE):
 
@@ -1186,12 +1187,14 @@ async def admin(update: Update,
         WHERE last_active = ?
     """, (today,)).fetchone()[0]
 
+    # ---------------- TOP STREAKS ----------------
+
     top_streaks = cursor.execute("""
-    SELECT username, longest_streak
-    FROM users
-    ORDER BY longest_streak DESC
-    LIMIT 10
-""").fetchall()
+        SELECT username, longest_streak
+        FROM users
+        ORDER BY longest_streak DESC
+        LIMIT 10
+    """).fetchall()
 
     leaderboard = ""
 
@@ -1212,6 +1215,72 @@ async def admin(update: Update,
         leaderboard += (
             f"{prefix} {username} — 🔥 {streak}\n"
         )
+
+    # ---------------- FEATURE ANALYTICS ----------------
+
+    profile_count = get_feature_count("profile")
+    leetcode_count = get_feature_count("leetcode")
+    potd_count = get_feature_count("potd")
+    smart_count = get_feature_count("smart")
+    reminder_count = get_feature_count("reminders")
+
+    enabled_reminders = cursor.execute("""
+        SELECT COUNT(*)
+        FROM users
+        WHERE reminder_enabled = 1
+    """).fetchone()[0]
+
+    # ---------------- BOT HEALTH ----------------
+
+    try:
+        cursor.execute("SELECT 1")
+        database_status = "🟢 Connected"
+    except:
+        database_status = "🔴 Disconnected"
+
+    scheduler_status = "🟢 Running"
+    bot_status = "🟢 Online"
+
+    # ---------------- DASHBOARD ----------------
+
+    await update.message.reply_text(
+        f"📊 Bot Analytics\n\n"
+
+        f"👥 Total Users: {total_users}\n"
+        f"🆕 Joined Today: {joined_today}\n"
+        f"🔥 Active Today: {active_today}\n\n"
+
+        f"━━━━━━━━━━━━━━━━━━\n\n"
+
+        f"📈 Feature Usage\n\n"
+
+        f"👤 Profile               : {profile_count}\n"
+        f"📊 LeetCode Stats        : {leetcode_count}\n"
+        f"🔥 Daily POTD            : {potd_count}\n"
+        f"🧠 Smart Recommendation  : {smart_count}\n"
+        f"⏰ Reminder Settings     : {reminder_count}\n\n"
+
+        f"━━━━━━━━━━━━━━━━━━\n\n"
+
+        f"🏆 Top 10 Longest Streaks\n\n"
+
+        f"{leaderboard}"
+
+        f"\n━━━━━━━━━━━━━━━━━━\n\n"
+
+        f"⏰ Reminder Analytics\n\n"
+
+        f"Enabled Reminders : {enabled_reminders}\n"
+
+        f"\n━━━━━━━━━━━━━━━━━━\n\n"
+
+        f"🤖 Bot Health\n\n"
+
+        f"🗄 Database : {database_status}\n"
+        f"⏰ Scheduler : {scheduler_status}\n"
+        f"🤖 Bot : {bot_status}"
+    )
+
 
 # ---------------- GET LEETCODE USERS ----------------
 
@@ -1238,7 +1307,10 @@ async def get_leetcode(update: Update,
 
     message = "📋 Registered LeetCode Users\n\n"
 
-    for i, (telegram_username, leetcode_username) in enumerate(users, start=1):
+    for i, (telegram_username, leetcode_username) in enumerate(
+        users,
+        start=1
+    ):
 
         telegram_username = telegram_username or "Unknown"
 
@@ -1253,70 +1325,6 @@ async def get_leetcode(update: Update,
         )
 
     await update.message.reply_text(message)
-
-# ---------------- FEATURE ANALYTICS ----------------
-
-    profile_count = get_feature_count("profile")
-    leetcode_count = get_feature_count("leetcode")
-    potd_count = get_feature_count("potd")
-    smart_count = get_feature_count("smart")
-    reminder_count = get_feature_count("reminders")
-
-    enabled_reminders = cursor.execute("""
-    SELECT COUNT(*)
-    FROM users
-    WHERE reminder_enabled = 1
-    """).fetchone()[0]
-    # ---------------- BOT HEALTH ----------------
-
-    try:
-        cursor.execute("SELECT 1")
-        database_status = "🟢 Connected"
-    except:
-        database_status = "🔴 Disconnected"
-
-    scheduler_status = "🟢 Running"
-
-    bot_status = "🟢 Online"    
-    # ---------------- DASHBOARD ----------------
-
-    await update.message.reply_text(
-    f"📊 Bot Analytics\n\n"
-
-    f"👥 Total Users: {total_users}\n"
-    f"🆕 Joined Today: {joined_today}\n"
-    f"🔥 Active Today: {active_today}\n\n"
-
-    f"━━━━━━━━━━━━━━━━━━\n\n"
-
-    f"📈 Feature Usage\n\n"
-
-    f"👤 Profile               : {profile_count}\n"
-    f"📊 LeetCode Stats        : {leetcode_count}\n"
-    f"🔥 Daily POTD            : {potd_count}\n"
-    f"🧠 Smart Recommendation  : {smart_count}\n"
-    f"⏰ Reminder Settings     : {reminder_count}\n\n"
-
-    f"━━━━━━━━━━━━━━━━━━\n\n"
-
-    f"🏆 Top 10 Longest Streaks\n\n"
-
-    f"{leaderboard}"
-
-    f"\n━━━━━━━━━━━━━━━━━━\n\n"
-
-    f"⏰ Reminder Analytics\n\n"
-
-    f"Enabled Reminders : {enabled_reminders}\n"
-
-    f"\n━━━━━━━━━━━━━━━━━━\n\n"
-
-    f"🤖 Bot Health\n\n"
-
-    f"🗄 Database : {database_status}\n"
-    f"⏰ Scheduler : {scheduler_status}\n"
-    f"🤖 Bot : {bot_status}\n"
-)
 
 # ---------------- BROADCAST ----------------
 async def broadcast(update: Update,
